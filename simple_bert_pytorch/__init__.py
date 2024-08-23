@@ -16,5 +16,3 @@ def get_version_tag() -> str:
 
 
 VERSION = get_version_tag()
-
-from simple_bert_pytorch.modules import Bert  # noqa: F401, E402
