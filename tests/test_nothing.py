@@ -1,5 +1,5 @@
-import {{REPO_NAME_SNAKECASE}}
+import simple_bert_pytorch
 
 
 def test_nothing():
-    print({{REPO_NAME_SNAKECASE}})
+    print(simple_bert_pytorch)
