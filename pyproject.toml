@@ -9,7 +9,9 @@ authors = [
 description = "simple-bert-pytorch"
 license = {text = "MIT"}
 dynamic = ["version", "readme"]  # NOTE: Must be in sync with [tool.setuptools.dynamic] below
-dependencies = []
+dependencies = [
+    "torch>=2.0,<3",
+]
 requires-python = ">=3.8"
 classifiers = ["Programming Language :: Python :: 3"]
 
@@ -24,12 +26,14 @@ exclude = ["tests"]
 # extra packages (e.g. pip install .[test])
 [project.optional-dependencies]
 test = [
-    "black",
-    "mypy",
-    "pre-commit",
-    "pytest",
-    "pytest-cov",
-    "ruff",
+    "transformers==4.44.2",
+    # linting and unit tests
+    "black==24.8.0",
+    "mypy==1.11.1",
+    "pre-commit==3.8.0",
+    "pytest==8.3.2",
+    "pytest-cov==5.0.0",
+    "ruff==0.6.2",
 ]
 
 
