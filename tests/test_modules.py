@@ -15,6 +15,10 @@ from simple_bert_pytorch.modules import (
     SelfAttentionOutput,
 )
 
+# Make CUDA ops fully deterministic
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+
 
 @pytest.fixture(
     scope="module",

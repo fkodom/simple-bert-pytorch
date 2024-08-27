@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional
 
 import torch
 from torch import Tensor, nn
@@ -80,7 +80,7 @@ class SelfAttention(nn.Module):
 
     def forward(
         self, hidden_states: Tensor, attention_mask: Optional[Tensor] = None
-    ) -> Tuple[Tensor]:
+    ) -> Tensor:
         batch_size, seq_len, _ = hidden_states.size()
         num_heads = self.num_heads
 
@@ -108,9 +108,9 @@ class SelfAttentionOutput(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, hidden_states: Tensor, input_tensor: Tensor) -> Tensor:
-        hidden_states = self.dense(hidden_states)
-        hidden_states = self.dropout(hidden_states)
-        hidden_states = self.LayerNorm(hidden_states + input_tensor)
+        hidden_states = self.dense.forward(hidden_states)
+        hidden_states = self.dropout.forward(hidden_states)
+        hidden_states = self.LayerNorm.forward(hidden_states + input_tensor)
         return hidden_states
 
 
@@ -132,9 +132,9 @@ class Attention(nn.Module):
         self,
         hidden_states: Tensor,
         attention_mask: Optional[torch.FloatTensor] = None,
-    ) -> Tuple[Tensor]:
-        self_outputs = self.self(hidden_states, attention_mask)
-        return self.output(self_outputs[0], hidden_states)
+    ) -> Tensor:
+        self_outputs = self.self.forward(hidden_states, attention_mask)
+        return self.output.forward(self_outputs[0], hidden_states)
 
 
 class Intermediate(nn.Module):
@@ -151,7 +151,7 @@ class Intermediate(nn.Module):
         self.activation = activation
 
     def forward(self, hidden_states: Tensor) -> Tensor:
-        hidden_states = self.dense(hidden_states)
+        hidden_states = self.dense.forward(hidden_states)
         hidden_states = self.activation(hidden_states)
         return hidden_states
 
@@ -170,9 +170,9 @@ class Output(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, hidden_states: Tensor, input_tensor: Tensor) -> Tensor:
-        hidden_states = self.dense(hidden_states)
-        hidden_states = self.dropout(hidden_states)
-        hidden_states = self.LayerNorm(hidden_states + input_tensor)
+        hidden_states = self.dense.forward(hidden_states)
+        hidden_states = self.dropout.forward(hidden_states)
+        hidden_states = self.LayerNorm.forward(hidden_states + input_tensor)
         return hidden_states
 
 
@@ -208,9 +208,9 @@ class Layer(nn.Module):
         hidden_states: Tensor,
         attention_mask: Optional[torch.FloatTensor] = None,
     ) -> Tensor:
-        attention = self.attention(hidden_states, attention_mask)
-        intermediate = self.intermediate(attention)
-        return self.output(intermediate, attention)
+        attention = self.attention.forward(hidden_states, attention_mask)
+        intermediate = self.intermediate.forward(attention)
+        return self.output.forward(intermediate, attention)
 
 
 class Encoder(nn.Module):
@@ -296,11 +296,6 @@ class Bert(nn.Module):
         position_ids: Optional[Tensor] = None,
         token_type_ids: Optional[Tensor] = None,
     ) -> Tensor:
-        batch_size, seq_length = input_ids.size()
-        device = input_ids.device
-        if attention_mask is None:
-            attention_mask = torch.ones((1, batch_size, seq_length), device=device)
-
         embeddings = self.embeddings.forward(
             input_ids, position_ids=position_ids, token_type_ids=token_type_ids
         )
