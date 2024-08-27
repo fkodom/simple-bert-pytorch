@@ -1,3 +1,5 @@
+from typing import Optional
+
 import pytest
 from transformers import BertTokenizer
 
@@ -65,8 +67,8 @@ def test_tokenizer(
     hf_tokenizer: BertTokenizer,
     text: str,
     padding: bool,
-    max_length: int | None,
-    pad_to_multiple_of: int | None,
+    max_length: Optional[int],
+    pad_to_multiple_of: Optional[int],
     skip_special_tokens: bool,
 ):
     tokenizer = Tokenizer(
