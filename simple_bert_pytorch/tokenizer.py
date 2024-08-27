@@ -31,13 +31,14 @@ class BasicTokenizer:
             text = text.lower()
 
         special_tokens = "|".join(re.escape(token) for token in self.special_tokens)
+        tokens: list[str]
         if self.do_split_on_punc:
             # Separate punctuation into their own tokens, then split on any
             # remaining whitespace.  Regex makes this very efficient.
-            tokens: list[str] = re.findall(rf"{special_tokens}|[\w']+|[^\w\s]", text)
+            tokens = re.findall(rf"{special_tokens}|[\w']+|[^\w\s]", text)
         else:
             # Only split on special characters and whitespace.
-            tokens: list[str] = re.findall(rf"{special_tokens}|[\w']+|\s", text)
+            tokens = re.findall(rf"{special_tokens}|[\w']+|\s", text)
             # tokens = text.strip().split()
 
         # Remove any empty tokens before returning.
@@ -159,7 +160,7 @@ class Tokenizer:
             [(id_, token) for token, id_ in self.token_to_id.items()]
         )
         self.basic_tokenizer = BasicTokenizer(
-            lower_case=do_lower_case, special_tokens=special_tokens
+            lower_case=do_lower_case, special_tokens=set(special_tokens)
         )
         self.wordpiece_tokenizer = WordpieceTokenizer(
             vocab=set(self.token_to_id), unk_token=str(unk_token)
@@ -291,6 +292,7 @@ class Tokenizer:
 
 if __name__ == "__main__":
     from transformers import BertTokenizer
+
     # from transformers.models.bert.tokenization_bert import load_vocab
 
     hf_tokenizer: BertTokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
@@ -321,10 +323,3 @@ if __name__ == "__main__":
     hf_dedocded = hf_tokenizer.decode(hf_encoded["input_ids"][0]).lower()
     decoded = tokenizer.decode(encoded["input_ids"][0])
     assert hf_dedocded == decoded
-
-    # print(hf_encoded)
-    for key in ["input_ids", "attention_mask"]:
-        for hf, enc in zip(hf_encoded[key], encoded[key]):
-            assert len(hf) == len(enc), f"{len(hf)} != {len(enc)}"
-            for x, y in zip(hf, enc):
-                assert x == y

@@ -1,7 +1,7 @@
-from typing import Optional
+from typing import Optional, cast
 
 import torch
-from torch import Tensor, nn
+from torch import LongTensor, Tensor, nn
 
 
 class Embeddings(nn.Module):
@@ -43,21 +43,21 @@ class Embeddings(nn.Module):
 
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = None,
-        token_type_ids: Optional[torch.LongTensor] = None,
-        position_ids: Optional[torch.LongTensor] = None,
+        input_ids: LongTensor,
+        token_type_ids: Optional[LongTensor] = None,
+        position_ids: Optional[LongTensor] = None,
     ) -> Tensor:
         seq_length = input_ids.size(1)
         if position_ids is None:
-            position_ids = self.position_ids[:, :seq_length]
+            position_ids = cast(LongTensor, self.position_ids[:, :seq_length])
         if token_type_ids is None:
-            token_type_ids = self.token_type_ids[:, :seq_length]
+            token_type_ids = cast(LongTensor, self.token_type_ids[:, :seq_length])
 
-        embeddings = self.word_embeddings(input_ids)
-        embeddings = embeddings + self.token_type_embeddings(token_type_ids)
-        embeddings = embeddings + self.position_embeddings(position_ids)
-        embeddings = self.LayerNorm(embeddings)
-        embeddings = self.dropout(embeddings)
+        embeddings = self.word_embeddings.forward(input_ids)
+        embeddings = embeddings + self.token_type_embeddings.forward(token_type_ids)
+        embeddings = embeddings + self.position_embeddings.forward(position_ids)
+        embeddings = self.LayerNorm.forward(embeddings)
+        embeddings = self.dropout.forward(embeddings)
         return embeddings
 
 
@@ -131,7 +131,7 @@ class Attention(nn.Module):
     def forward(
         self,
         hidden_states: Tensor,
-        attention_mask: Optional[torch.FloatTensor] = None,
+        attention_mask: Optional[torch.Tensor] = None,
     ) -> Tensor:
         self_outputs = self.self.forward(hidden_states, attention_mask)
         return self.output.forward(self_outputs[0], hidden_states)
@@ -206,7 +206,7 @@ class Layer(nn.Module):
     def forward(
         self,
         hidden_states: Tensor,
-        attention_mask: Optional[torch.FloatTensor] = None,
+        attention_mask: Optional[torch.Tensor] = None,
     ) -> Tensor:
         attention = self.attention.forward(hidden_states, attention_mask)
         intermediate = self.intermediate.forward(attention)
@@ -244,7 +244,7 @@ class Encoder(nn.Module):
     def forward(
         self,
         hidden_states: Tensor,
-        attention_mask: Optional[torch.FloatTensor] = None,
+        attention_mask: Optional[Tensor] = None,
     ) -> Tensor:
         for layer in self.layer:
             hidden_states = layer.forward(hidden_states, attention_mask)
@@ -291,10 +291,10 @@ class Bert(nn.Module):
 
     def forward(
         self,
-        input_ids: Optional[Tensor],
+        input_ids: LongTensor,
         attention_mask: Optional[Tensor] = None,
-        position_ids: Optional[Tensor] = None,
-        token_type_ids: Optional[Tensor] = None,
+        position_ids: Optional[LongTensor] = None,
+        token_type_ids: Optional[LongTensor] = None,
     ) -> Tensor:
         embeddings = self.embeddings.forward(
             input_ids, position_ids=position_ids, token_type_ids=token_type_ids

@@ -12,5 +12,5 @@ repos:
     name: ruff
     stages: [commit]
     language: system
-    entry: ruff
+    entry: ruff check
     types: [python]
