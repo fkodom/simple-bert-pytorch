@@ -12,7 +12,7 @@ dynamic = ["version", "readme"]  # NOTE: Must be in sync with [tool.setuptools.d
 dependencies = [
     "torch>=2.0,<3",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 classifiers = ["Programming Language :: Python :: 3"]
 
 [tool.setuptools.dynamic]
