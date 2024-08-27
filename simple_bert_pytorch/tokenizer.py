@@ -4,7 +4,7 @@ import unicodedata
 from collections import OrderedDict
 from functools import lru_cache
 from math import ceil
-from typing import Literal, TypedDict, overload
+from typing import List, Literal, Optional, Sequence, Set, TypedDict, overload
 
 import torch
 
@@ -17,7 +17,7 @@ class BasicTokenizer:
         self,
         lower_case: bool = True,
         split_on_punc: bool = True,
-        special_tokens: set[str] | None = None,
+        special_tokens: Optional[Set[str]] = None,
     ):
         self.do_lower_case = lower_case
         self.do_split_on_punc = split_on_punc
@@ -25,13 +25,13 @@ class BasicTokenizer:
         if self.do_lower_case:
             self.special_tokens = {token.lower() for token in self.special_tokens}
 
-    def tokenize(self, text: str) -> list[str]:
+    def tokenize(self, text: str) -> List[str]:
         text = clean_text(text)
         if self.do_lower_case:
             text = text.lower()
 
         special_tokens = "|".join(re.escape(token) for token in self.special_tokens)
-        tokens: list[str]
+        tokens: List[str]
         if self.do_split_on_punc:
             # Separate punctuation into their own tokens, then split on any
             # remaining whitespace.  Regex makes this very efficient.
@@ -71,7 +71,7 @@ class WordpieceTokenizer:
         self.unk_token = unk_token
         self.max_token_size = max_token_size
 
-    def tokenize(self, text: str) -> list[str]:
+    def tokenize(self, text: str) -> List[str]:
         return [
             token
             for word in text.strip().split()
@@ -89,12 +89,12 @@ def _tokenize_word(
     vocab: set[str],
     unk_token: str,
     max_token_size: int,
-) -> list[str]:
+) -> List[str]:
     word_length = len(word)
     if word_length > max_token_size:
         return [unk_token]
 
-    tokens: list[str] = []
+    tokens: List[str] = []
     start = 0
 
     while start < word_length:
@@ -118,7 +118,7 @@ def _tokenize_word(
 
 
 ListReturnType = TypedDict(
-    "ListReturnType", {"input_ids": list[list[int]], "attention_mask": list[list[int]]}
+    "ListReturnType", {"input_ids": List[List[int]], "attention_mask": List[List[int]]}
 )
 TensorReturnType = TypedDict(
     "TensorReturnType",
@@ -174,7 +174,7 @@ class Tokenizer:
     def vocab_size(self):
         return len(self.token_to_id)
 
-    def tokenize(self, text: str) -> list[str]:
+    def tokenize(self, text: str) -> List[str]:
         return [
             token
             for word in self.basic_tokenizer.tokenize(text)
@@ -184,10 +184,10 @@ class Tokenizer:
     @overload
     def __call__(
         self,
-        texts: list[str],
+        texts: Sequence[str],
         padding: bool = False,
-        max_length: int | None = None,
-        pad_to_multiple_of: int | None = None,
+        max_length: Optional[int] = None,
+        pad_to_multiple_of: Optional[int] = None,
         return_tensors: Literal[False] = False,
     ) -> ListReturnType:
         pass
@@ -195,20 +195,20 @@ class Tokenizer:
     @overload
     def __call__(
         self,
-        texts: list[str],
+        texts: Sequence[str],
         padding: bool = False,
-        max_length: int | None = None,
-        pad_to_multiple_of: int | None = None,
+        max_length: Optional[int] = None,
+        pad_to_multiple_of: Optional[int] = None,
         return_tensors: Literal[True] = True,
     ) -> TensorReturnType:
         pass
 
     def __call__(
         self,
-        texts: list[str],
+        texts: Sequence[str],
         padding: bool = False,
-        max_length: int | None = None,
-        pad_to_multiple_of: int | None = None,
+        max_length: Optional[int] = None,
+        pad_to_multiple_of: Optional[int] = None,
         return_tensors: Literal[True, False] = False,
     ):
         if (
@@ -255,7 +255,7 @@ class Tokenizer:
 
     def decode(
         self,
-        token_ids: list[int],
+        token_ids: Sequence[int],
         skip_special_tokens: bool = False,
         clean_up_tokenization_spaces: bool = True,
     ) -> str:

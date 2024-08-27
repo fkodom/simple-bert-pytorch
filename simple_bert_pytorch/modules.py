@@ -1,4 +1,4 @@
-from typing import Optional, cast
+from typing import Optional, Union, cast
 
 import torch
 from torch import LongTensor, Tensor, nn
@@ -142,7 +142,7 @@ class Intermediate(nn.Module):
         self,
         hidden_size: int,
         intermediate_size: int,
-        activation: str | nn.Module = "gelu",
+        activation: Union[str, nn.Module] = "gelu",
     ):
         super().__init__()
         self.dense = nn.Linear(hidden_size, intermediate_size)
