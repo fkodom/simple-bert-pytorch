@@ -1,7 +1,27 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
 from typing import Optional, Union, cast
 
 import torch
 from torch import LongTensor, Tensor, nn
+
+
+@dataclass
+class Config:
+    name: str
+    weights_uri: Optional[str]
+    vocab_size: int
+    num_layers: int
+    dim: int
+    num_heads: int
+    intermediate_size: int
+    max_length: int = 512
+    pad_token_id: int = 0
+    dropout: float = 0.1
+    attention_dropout: float = 0.1
+    activation: str = "gelu"
+    layer_norm_eps: float = 1e-12
 
 
 class Embeddings(nn.Module):
@@ -288,6 +308,22 @@ class Bert(nn.Module):
 
         # TODO: Initialize weights
         # self.post_init()
+
+    @classmethod
+    def from_config(cls, config: Config) -> Bert:
+        return cls(
+            vocab_size=config.vocab_size,
+            num_layers=config.num_layers,
+            dim=config.dim,
+            num_heads=config.num_heads,
+            intermediate_size=config.intermediate_size,
+            max_length=config.max_length,
+            pad_token_id=config.pad_token_id,
+            dropout=config.dropout,
+            attention_dropout=config.attention_dropout,
+            activation=config.activation,
+            layer_norm_eps=config.layer_norm_eps,
+        )
 
     def forward(
         self,
