@@ -1,27 +1,24 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Optional, Union, cast
+from typing import Optional, Type, TypedDict, TypeVar, Union
 
 import torch
-from torch import LongTensor, Tensor, nn
+from torch import Tensor, nn
 
 
-@dataclass
-class Config:
+class Config(TypedDict):
     name: str
-    weights_uri: Optional[str]
     vocab_size: int
     num_layers: int
     dim: int
     num_heads: int
     intermediate_size: int
-    max_length: int = 512
-    pad_token_id: int = 0
-    dropout: float = 0.1
-    attention_dropout: float = 0.1
-    activation: str = "gelu"
-    layer_norm_eps: float = 1e-12
+    max_length: int
+    pad_token_id: int
+    dropout: float
+    attention_dropout: float
+    activation: str
+    layer_norm_eps: float
 
 
 class Embeddings(nn.Module):
@@ -63,15 +60,15 @@ class Embeddings(nn.Module):
 
     def forward(
         self,
-        input_ids: LongTensor,
-        token_type_ids: Optional[LongTensor] = None,
-        position_ids: Optional[LongTensor] = None,
+        input_ids: Tensor,
+        token_type_ids: Optional[Tensor] = None,
+        position_ids: Optional[Tensor] = None,
     ) -> Tensor:
         seq_length = input_ids.size(1)
         if position_ids is None:
-            position_ids = cast(LongTensor, self.position_ids[:, :seq_length])
+            position_ids = self.position_ids[:, :seq_length]
         if token_type_ids is None:
-            token_type_ids = cast(LongTensor, self.token_type_ids[:, :seq_length])
+            token_type_ids = self.token_type_ids[:, :seq_length]
 
         embeddings = self.word_embeddings.forward(input_ids)
         embeddings = embeddings + self.token_type_embeddings.forward(token_type_ids)
@@ -271,6 +268,26 @@ class Encoder(nn.Module):
         return hidden_states
 
 
+class Pooler(nn.Module):
+    # NOTE: IMO, this is a model-specific layer.  It's relevant for (e.g.) classifiers
+    # and embeddings models, some of those also use mean pooling instead.  This should
+    # be withheld from the base model, and implemented for downstream models as needed.
+
+    def __init__(self, dim: int):
+        super().__init__()
+        self.dense = nn.Linear(dim, dim)
+        self.activation = nn.Tanh()
+
+    def forward(self, hidden_states: Tensor) -> Tensor:
+        # For many common models, 'pooling" just means taking the first output token.
+        x = hidden_states[:, 0]
+        x = self.dense(x)
+        return self.activation(x)
+
+
+BertType = TypeVar("BertType", bound="Bert")
+
+
 class Bert(nn.Module):
     def __init__(
         self,
@@ -310,27 +327,27 @@ class Bert(nn.Module):
         # self.post_init()
 
     @classmethod
-    def from_config(cls, config: Config) -> Bert:
+    def from_config(cls: Type[BertType], config: Config) -> BertType:
         return cls(
-            vocab_size=config.vocab_size,
-            num_layers=config.num_layers,
-            dim=config.dim,
-            num_heads=config.num_heads,
-            intermediate_size=config.intermediate_size,
-            max_length=config.max_length,
-            pad_token_id=config.pad_token_id,
-            dropout=config.dropout,
-            attention_dropout=config.attention_dropout,
-            activation=config.activation,
-            layer_norm_eps=config.layer_norm_eps,
+            vocab_size=config["vocab_size"],
+            num_layers=config["num_layers"],
+            dim=config["dim"],
+            num_heads=config["num_heads"],
+            intermediate_size=config["intermediate_size"],
+            max_length=config["max_length"],
+            pad_token_id=config["pad_token_id"],
+            dropout=config["dropout"],
+            attention_dropout=config["attention_dropout"],
+            activation=config["activation"],
+            layer_norm_eps=config["layer_norm_eps"],
         )
 
     def forward(
         self,
-        input_ids: LongTensor,
+        input_ids: Tensor,
         attention_mask: Optional[Tensor] = None,
-        position_ids: Optional[LongTensor] = None,
-        token_type_ids: Optional[LongTensor] = None,
+        position_ids: Optional[Tensor] = None,
+        token_type_ids: Optional[Tensor] = None,
     ) -> Tensor:
         embeddings = self.embeddings.forward(
             input_ids, position_ids=position_ids, token_type_ids=token_type_ids
@@ -347,20 +364,3 @@ def get_activation_fn(name: str) -> nn.Module:
         return nn.SiLU()
     else:
         raise ValueError(f"Activation fn {name} not found")
-
-
-class Pooler(nn.Module):
-    # NOTE: IMO, this is a model-specific layer.  It's relevant for (e.g.) classifiers
-    # and embeddings models, some of those also use mean pooling instead.  This should
-    # be withheld from the base model, and implemented for downstream models as needed.
-
-    def __init__(self, dim: int):
-        super().__init__()
-        self.dense = nn.Linear(dim, dim)
-        self.activation = nn.Tanh()
-
-    def forward(self, hidden_states: Tensor) -> Tensor:
-        # For many common models, 'pooling" just means taking the first output token.
-        x = hidden_states[:, 0]
-        x = self.dense(x)
-        return self.activation(x)

@@ -14,8 +14,12 @@ class ModelName(str, Enum):
     MSMARCO_MINILM_L_12_V3 = "sentence-transformers/msmarco-MiniLM-L-12-v3"
 
 
-CONFIGS: Dict[ModelName, Config] = {
-    ModelName.MSMARCO_MINILM_L_6_V3: Config(
+class MiniLMConfig(Config):
+    weights_uri: str
+
+
+CONFIGS: Dict[ModelName, MiniLMConfig] = {
+    ModelName.MSMARCO_MINILM_L_6_V3: MiniLMConfig(
         name=ModelName.MSMARCO_MINILM_L_6_V3.value,
         weights_uri="https://huggingface.co/sentence-transformers/msmarco-MiniLM-L-6-v3/resolve/main/pytorch_model.bin",
         vocab_size=30522,
@@ -30,7 +34,7 @@ CONFIGS: Dict[ModelName, Config] = {
         activation="gelu",
         layer_norm_eps=1e-12,
     ),
-    ModelName.MSMARCO_MINILM_L_12_V3: Config(
+    ModelName.MSMARCO_MINILM_L_12_V3: MiniLMConfig(
         name=ModelName.MSMARCO_MINILM_L_12_V3.value,
         weights_uri="https://huggingface.co/sentence-transformers/msmarco-MiniLM-L-12-v3/resolve/main/pytorch_model.bin",
         vocab_size=30522,
@@ -49,28 +53,19 @@ CONFIGS: Dict[ModelName, Config] = {
 
 
 class MiniLM(Bert):
-    def from_pretrained(name: Union[ModelName, str]) -> MiniLM:
+    @classmethod
+    def from_pretrained(cls, name: Union[ModelName, str]) -> MiniLM:
+        if not isinstance(name, ModelName):
+            name = ModelName(name)
+
         config = CONFIGS[name]
-        assert config.weights_uri is not None
-        minilm = MiniLM(
-            vocab_size=config.vocab_size,
-            dim=config.dim,
-            num_layers=config.num_layers,
-            num_heads=config.num_heads,
-            intermediate_size=config.intermediate_size,
-            max_length=config.max_length,
-            pad_token_id=config.pad_token_id,
-            dropout=config.dropout,
-            attention_dropout=config.attention_dropout,
-            activation=config.activation,
-            layer_norm_eps=config.layer_norm_eps,
-        )
+        minilm = MiniLM.from_config(config)
 
         hub_dir = torch.hub.get_dir()
-        cache_path = os.path.join(hub_dir, "simple-bert-pytorch", config.name)
+        cache_path = os.path.join(hub_dir, "simple-bert-pytorch", config["name"])
         if not os.path.exists(cache_path):
             os.makedirs(os.path.dirname(cache_path), exist_ok=True)
-            torch.hub.download_url_to_file(config.weights_uri, cache_path)
+            torch.hub.download_url_to_file(config["weights_uri"], cache_path)
 
         state_dict = torch.load(cache_path, weights_only=True)
         state_dict.pop("pooler.dense.weight")

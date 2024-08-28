@@ -15,8 +15,12 @@ class ModelName(str, Enum):
     BGE_LARGE_EN_V1_5 = "BAAI/bge-large-en-v1.5"
 
 
-CONFIGS: Dict[ModelName, Config] = {
-    ModelName.BGE_SMALL_EN_V1_5: Config(
+class BGEConfig(Config):
+    weights_uri: str
+
+
+CONFIGS: Dict[ModelName, BGEConfig] = {
+    ModelName.BGE_SMALL_EN_V1_5: BGEConfig(
         name=ModelName.BGE_SMALL_EN_V1_5.value,
         weights_uri="https://huggingface.co/BAAI/bge-small-en-v1.5/resolve/main/pytorch_model.bin",
         vocab_size=30522,
@@ -31,7 +35,7 @@ CONFIGS: Dict[ModelName, Config] = {
         activation="gelu",
         layer_norm_eps=1e-12,
     ),
-    ModelName.BGE_BASE_EN_V1_5: Config(
+    ModelName.BGE_BASE_EN_V1_5: BGEConfig(
         name=ModelName.BGE_BASE_EN_V1_5.value,
         weights_uri="https://huggingface.co/BAAI/bge-base-en-v1.5/resolve/main/pytorch_model.bin",
         vocab_size=30522,
@@ -46,7 +50,7 @@ CONFIGS: Dict[ModelName, Config] = {
         activation="gelu",
         layer_norm_eps=1e-12,
     ),
-    ModelName.BGE_LARGE_EN_V1_5: Config(
+    ModelName.BGE_LARGE_EN_V1_5: BGEConfig(
         name=ModelName.BGE_LARGE_EN_V1_5.value,
         weights_uri="https://huggingface.co/BAAI/bge-large-en-v1.5/resolve/main/pytorch_model.bin",
         vocab_size=30522,
@@ -65,36 +69,27 @@ CONFIGS: Dict[ModelName, Config] = {
 
 
 class BGE(Bert):
-    def from_pretrained(name: Union[ModelName, str]) -> BGE:
+    @classmethod
+    def from_pretrained(cls, name: Union[ModelName, str]) -> BGE:
+        if not isinstance(name, ModelName):
+            name = ModelName(name)
+
         config = CONFIGS[name]
-        assert config.weights_uri is not None
-        minilm = BGE(
-            vocab_size=config.vocab_size,
-            dim=config.dim,
-            num_layers=config.num_layers,
-            num_heads=config.num_heads,
-            intermediate_size=config.intermediate_size,
-            max_length=config.max_length,
-            pad_token_id=config.pad_token_id,
-            dropout=config.dropout,
-            attention_dropout=config.attention_dropout,
-            activation=config.activation,
-            layer_norm_eps=config.layer_norm_eps,
-        )
+        bge = BGE.from_config(config)
 
         hub_dir = torch.hub.get_dir()
-        cache_path = os.path.join(hub_dir, "simple-bert-pytorch", config.name)
+        cache_path = os.path.join(hub_dir, "simple-bert-pytorch", config["name"])
         if not os.path.exists(cache_path):
             os.makedirs(os.path.dirname(cache_path), exist_ok=True)
-            torch.hub.download_url_to_file(config.weights_uri, cache_path)
+            torch.hub.download_url_to_file(config["weights_uri"], cache_path)
 
         state_dict = torch.load(cache_path, weights_only=True)
         state_dict.pop("pooler.dense.weight")
         state_dict.pop("pooler.dense.bias")
         state_dict.pop("embeddings.position_ids")
-        minilm.load_state_dict(state_dict)
+        bge.load_state_dict(state_dict)
 
-        return minilm
+        return bge
 
 
 if __name__ == "__main__":
