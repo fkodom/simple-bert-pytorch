@@ -6,6 +6,9 @@ on:
     types:
       - created
 
+permissions:
+  id-token: write
+
 env:
   PYTHON_VERSION: 3.9
 
