@@ -6,7 +6,7 @@ from typing import Dict, Union
 
 import torch
 
-from simple_bert_pytorch.modules import Bert, Config
+from simple_bert_pytorch.modules import Backbone, Config
 
 
 class ModelName(str, Enum):
@@ -16,6 +16,7 @@ class ModelName(str, Enum):
 
 
 class BGEConfig(Config):
+    name: str
     weights_uri: str
 
 
@@ -68,7 +69,7 @@ CONFIGS: Dict[ModelName, BGEConfig] = {
 }
 
 
-class BGE(Bert):
+class BGE(Backbone):
     @classmethod
     def from_pretrained(cls, name: Union[ModelName, str]) -> BGE:
         if not isinstance(name, ModelName):

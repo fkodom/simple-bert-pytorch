@@ -4,7 +4,7 @@ from transformers.models.bert.modeling_bert import BertModel as HfBertModel
 
 from simple_bert_pytorch.modules import (
     Attention,
-    Bert,
+    Backbone,
     Embeddings,
     Encoder,
     Intermediate,
@@ -196,7 +196,7 @@ def test_encoder(hf_bert_model: HfBertModel):
 
 def test_bert(hf_bert_model: HfBertModel):
     config = hf_bert_model.config
-    bert = Bert(
+    bert = Backbone(
         vocab_size=config.vocab_size,
         dim=config.hidden_size,
         num_layers=config.num_hidden_layers,

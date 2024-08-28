@@ -7,7 +7,6 @@ from torch import Tensor, nn
 
 
 class Config(TypedDict):
-    name: str
     vocab_size: int
     num_layers: int
     dim: int
@@ -285,10 +284,10 @@ class Pooler(nn.Module):
         return self.activation(x)
 
 
-BertType = TypeVar("BertType", bound="Bert")
+BackboneType = TypeVar("BackboneType", bound="Backbone")
 
 
-class Bert(nn.Module):
+class Backbone(nn.Module):
     def __init__(
         self,
         vocab_size: int,
@@ -327,7 +326,7 @@ class Bert(nn.Module):
         # self.post_init()
 
     @classmethod
-    def from_config(cls: Type[BertType], config: Config) -> BertType:
+    def from_config(cls: Type[BackboneType], config: Config) -> BackboneType:
         return cls(
             vocab_size=config["vocab_size"],
             num_layers=config["num_layers"],
