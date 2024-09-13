@@ -1,5 +1,6 @@
 import pytest
 import torch
+from transformers import AutoModel
 from transformers.models.bert.modeling_bert import BertModel as HfBertModel
 
 from simple_bert_pytorch.modules import (
@@ -30,7 +31,7 @@ torch.backends.cudnn.benchmark = False
 )
 def hf_bert_model(request: pytest.FixtureRequest):
     model_name = request.param
-    hf_model: HfBertModel = HfBertModel.from_pretrained(model_name)
+    hf_model: HfBertModel = AutoModel.from_pretrained(model_name)
     return hf_model.eval()
 
 

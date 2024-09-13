@@ -12,6 +12,7 @@ from simple_bert_pytorch.modules import Backbone, Config
 class ModelName(str, Enum):
     MSMARCO_MINILM_L_6_V3 = "sentence-transformers/msmarco-MiniLM-L-6-v3"
     MSMARCO_MINILM_L_12_V3 = "sentence-transformers/msmarco-MiniLM-L-12-v3"
+    MSMARCO_MINILM_L_12_V2 = "cross-encoder/ms-marco-MiniLM-L-12-v2"
 
 
 class MiniLMConfig(Config):
@@ -79,20 +80,14 @@ class MiniLM(Backbone):
 
 if __name__ == "__main__":
     import torch
-    from transformers import BertModel
+    from transformers import AutoModel
 
-    hf_model = BertModel.from_pretrained(
+    hf_model = AutoModel.from_pretrained(
         "sentence-transformers/msmarco-MiniLM-L-12-v3"
     ).eval()
     model = MiniLM.from_pretrained(
         "sentence-transformers/msmarco-MiniLM-L-12-v3"
     ).eval()
-
-    state_dict = hf_model.state_dict()
-    for key in list(state_dict.keys()):
-        if key.startswith("pooler"):
-            state_dict.pop(key)
-    model.load_state_dict(state_dict)
 
     hidden_state = torch.randint(0, hf_model.config.vocab_size, (1, 10))
     attention_mask = torch.rand(1, 10).ge(0.5)

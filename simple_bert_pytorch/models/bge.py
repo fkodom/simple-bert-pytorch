@@ -95,16 +95,14 @@ class BGE(Backbone):
 
 if __name__ == "__main__":
     import torch
-    from transformers import BertModel
+    from transformers import AutoModel
 
-    hf_model = BertModel.from_pretrained(ModelName.BGE_SMALL_EN_V1_5.value).eval()
+    hf_model = AutoModel.from_pretrained(ModelName.BGE_SMALL_EN_V1_5.value).eval()
     model = BGE.from_pretrained(ModelName.BGE_SMALL_EN_V1_5).eval()
 
     hidden_state = torch.randint(0, hf_model.config.vocab_size, (1, 10))
     attention_mask = torch.rand(1, 10).ge(0.5)
     hf_y = hf_model.forward(hidden_state)
     y = model.forward(hidden_state)
-
-    # print(hf_model.config)
 
     torch.testing.assert_close(hf_y[0], y, rtol=1e-4, atol=1e-4)

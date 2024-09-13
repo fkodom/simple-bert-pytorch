@@ -1,15 +1,34 @@
 import copy
+import json
 import re
 import unicodedata
 from collections import OrderedDict
 from functools import lru_cache
 from math import ceil
-from typing import List, Literal, Optional, Sequence, Set, TypedDict, overload
+from pathlib import Path
+from typing import List, Literal, Optional, Self, Sequence, Set, TypedDict, overload
 
 import torch
 
 # Precompute common characters that will be removed from text
 INVALID_CHARS = {chr(0), chr(0xFFFD)}
+# Path to local 'vocab.json' files that are used with essentially all BERT models
+CASED_VOCAB_PATH = Path(__file__).parent / "vocab-cased.json"
+UNCASED_VOCAB_PATH = Path(__file__).parent / "vocab-uncased.json"
+CASED_MODELS = {"bert-base-cased", "bert-large-cased"}
+UNCASED_MODELS = {
+    "BAAI/bge-small-en-v1.5",
+    "BAAI/bge-base-en-v1.5",
+    "BAAI/bge-large-en-v1.5",
+    "bert-base-uncased",
+    "bert-large-uncased",
+    "cross-encoder/ms-marco-MiniLM-L-2-v2",
+    "cross-encoder/ms-marco-MiniLM-L-4-v2",
+    "cross-encoder/ms-marco-MiniLM-L-6-v2",
+    "cross-encoder/ms-marco-MiniLM-L-12-v2",
+    "sentence-transformers/ms-marco-MiniLM-L-6-v3",
+    "sentence-transformers/ms-marco-MiniLM-L-12-v3",
+}
 
 
 class BasicTokenizer:
@@ -166,6 +185,31 @@ class Tokenizer:
             vocab=set(self.token_to_id), unk_token=str(unk_token)
         )
 
+    @classmethod
+    def from_pretrained(
+        cls,
+        model_name: Optional[str] = None,
+        lower_case: Optional[bool] = None,
+    ) -> Self:
+        if (model_name is None) and (lower_case is None):
+            raise ValueError("Must provide either `model_name` or `lower_case`.")
+        elif lower_case is not None:
+            path = UNCASED_VOCAB_PATH if lower_case else CASED_VOCAB_PATH
+        elif model_name in CASED_MODELS:
+            path = CASED_VOCAB_PATH
+        elif model_name in UNCASED_MODELS:
+            path = UNCASED_VOCAB_PATH
+        else:
+            raise ValueError(
+                f"Model name '{model_name}' not recognized. Use the `lower_case` "
+                "argument instead."
+            )
+
+        with open(path, "r") as f:
+            vocab = json.load(f)
+
+        return cls(vocab=vocab)
+
     @property
     def do_lower_case(self):
         return self.basic_tokenizer.do_lower_case
@@ -302,6 +346,9 @@ if __name__ == "__main__":
     exercitation ull\x00amco laboris nisi ut aliquip ex ea commodo consequat.
     {hf_tokenizer.eos_token}"""
     text = "\n".join([text] * 10)
+
+    with open("vocab.json", "w") as f:
+        json.dump(hf_tokenizer.vocab, f)
 
     tokenizer = Tokenizer(
         vocab=hf_tokenizer.vocab,
