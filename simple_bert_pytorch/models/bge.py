@@ -6,7 +6,7 @@ from typing import Dict, Union
 
 import torch
 
-from simple_bert_pytorch.modules import Backbone, Config
+from simple_bert_pytorch.modules import Backbone, Config, Pooler
 
 
 class ModelName(str, Enum):
@@ -70,6 +70,43 @@ CONFIGS: Dict[ModelName, BGEConfig] = {
 
 
 class BGE(Backbone):
+    def __init__(
+        self,
+        vocab_size: int,
+        num_layers: int,
+        dim: int,
+        num_heads: int,
+        intermediate_size: int,
+        max_length: int,
+        pad_token_id: int,
+        dropout: float,
+        attention_dropout: float,
+        activation: str,
+        layer_norm_eps: float,
+    ):
+        super().__init__(
+            vocab_size=vocab_size,
+            num_layers=num_layers,
+            dim=dim,
+            num_heads=num_heads,
+            intermediate_size=intermediate_size,
+            max_length=max_length,
+            pad_token_id=pad_token_id,
+            dropout=dropout,
+            attention_dropout=attention_dropout,
+            activation=activation,
+            layer_norm_eps=layer_norm_eps,
+        )
+        self.pooler = Pooler(dim=dim)
+
+    def forward(
+        self, input_ids: torch.Tensor, attention_mask: torch.Tensor = None
+    ) -> torch.Tensor:
+        x = self.embeddings(input_ids)
+        x = self.encoder(x, attention_mask=attention_mask)
+        x = self.pooler(x)
+        return x
+
     @classmethod
     def from_pretrained(cls, name: Union[ModelName, str]) -> BGE:
         if not isinstance(name, ModelName):
@@ -85,24 +122,7 @@ class BGE(Backbone):
             torch.hub.download_url_to_file(config["weights_uri"], cache_path)
 
         state_dict = torch.load(cache_path, weights_only=True)
-        state_dict.pop("pooler.dense.weight")
-        state_dict.pop("pooler.dense.bias")
         state_dict.pop("embeddings.position_ids")
         bge.load_state_dict(state_dict)
 
         return bge
-
-
-if __name__ == "__main__":
-    import torch
-    from transformers import AutoModel
-
-    hf_model = AutoModel.from_pretrained(ModelName.BGE_SMALL_EN_V1_5.value).eval()
-    model = BGE.from_pretrained(ModelName.BGE_SMALL_EN_V1_5).eval()
-
-    hidden_state = torch.randint(0, hf_model.config.vocab_size, (1, 10))
-    attention_mask = torch.rand(1, 10).ge(0.5)
-    hf_y = hf_model.forward(hidden_state)
-    y = model.forward(hidden_state)
-
-    torch.testing.assert_close(hf_y[0], y, rtol=1e-4, atol=1e-4)

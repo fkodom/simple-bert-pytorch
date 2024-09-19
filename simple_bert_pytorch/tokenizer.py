@@ -26,8 +26,6 @@ UNCASED_MODELS = {
     "cross-encoder/ms-marco-MiniLM-L-4-v2",
     "cross-encoder/ms-marco-MiniLM-L-6-v2",
     "cross-encoder/ms-marco-MiniLM-L-12-v2",
-    "sentence-transformers/ms-marco-MiniLM-L-6-v3",
-    "sentence-transformers/ms-marco-MiniLM-L-12-v3",
 }
 
 
@@ -58,7 +56,6 @@ class BasicTokenizer:
         else:
             # Only split on special characters and whitespace.
             tokens = re.findall(rf"{special_tokens}|[\w']+|\s", text)
-            # tokens = text.strip().split()
 
         # Remove any empty tokens before returning.
         return [token for token in tokens if token]

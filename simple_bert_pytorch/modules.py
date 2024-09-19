@@ -108,6 +108,27 @@ class SelfAttention(nn.Module):
         k = k.view(batch_size, seq_len, num_heads, -1).permute(0, 2, 1, 3)
         v = v.view(batch_size, seq_len, num_heads, -1).permute(0, 2, 1, 3)
 
+        # Input attention masks can have several shapes:
+        #     (seq_len, ) - same mask applied to all inputs
+        #     (batch_size, seq_len) - separate mask for each sample
+        #     (batch_size, seq_len, seq_len) - separate masks for query and key/value
+        #     (batch_size, num_heads, seq_len, seq_len) - separate masks for each head
+        # But the input to scaled_dot_product_attention should have 4 dimensions.
+        # We need to handle each use case here.
+        if attention_mask is not None:
+            if attention_mask.dim() == 1:
+                # Add batch dimension
+                attention_mask = attention_mask.unsqueeze(0)
+            if attention_mask.dim() == 2:
+                # Add query sequence dimension
+                attention_mask = (
+                    # Apply the same masking to query and key/value dimensions
+                    attention_mask.unsqueeze(1)
+                )
+            if attention_mask.dim() == 3:
+                # Add head dimension
+                attention_mask = attention_mask.unsqueeze(1)
+
         dropout_p = self.dropout if self.training else 0.0
         attn = torch.nn.functional.scaled_dot_product_attention(
             q, k, v, attn_mask=attention_mask, dropout_p=dropout_p
@@ -150,7 +171,7 @@ class Attention(nn.Module):
         attention_mask: Optional[torch.Tensor] = None,
     ) -> Tensor:
         self_outputs = self.self.forward(hidden_states, attention_mask)
-        return self.output.forward(self_outputs[0], hidden_states)
+        return self.output.forward(self_outputs, hidden_states)
 
 
 class Intermediate(nn.Module):
@@ -303,6 +324,7 @@ class Backbone(nn.Module):
         layer_norm_eps: float = 1e-12,
     ):
         super().__init__()
+        self.vocab_size = vocab_size
         self.embeddings = Embeddings(
             vocab_size=vocab_size,
             dim=dim,
