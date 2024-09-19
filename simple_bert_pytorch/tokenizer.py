@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 import json
 import re
@@ -6,7 +8,7 @@ from collections import OrderedDict
 from functools import lru_cache
 from math import ceil
 from pathlib import Path
-from typing import List, Literal, Optional, Self, Sequence, Set, TypedDict, overload
+from typing import List, Literal, Optional, Sequence, Set, TypedDict, overload
 
 import torch
 
@@ -187,7 +189,7 @@ class Tokenizer:
         cls,
         model_name: Optional[str] = None,
         lower_case: Optional[bool] = None,
-    ) -> Self:
+    ) -> Tokenizer:
         if (model_name is None) and (lower_case is None):
             raise ValueError("Must provide either `model_name` or `lower_case`.")
         elif lower_case is not None:
