@@ -121,7 +121,7 @@ class BGE(Backbone):
             os.makedirs(os.path.dirname(cache_path), exist_ok=True)
             torch.hub.download_url_to_file(config["weights_uri"], cache_path)
 
-        state_dict = torch.load(cache_path, weights_only=True)
+        state_dict = torch.load(cache_path, weights_only=True, map_location="cpu")
         state_dict.pop("embeddings.position_ids")
         bge.load_state_dict(state_dict)
 

@@ -216,7 +216,7 @@ class Bert(nn.Module):
 
         # Load the pretrained state dict.
         # NOTE: We have to rename some keys to match our implementation.
-        state_dict = torch.load(cache_path, weights_only=True)
+        state_dict = torch.load(cache_path, weights_only=True, map_location="cpu")
         # The original BERT models use gamma/beta instead of weight/bias in the
         # LayerNorm layers.  We need to rename those variables here.
         state_dict = {
@@ -268,19 +268,3 @@ class BertForMaskedLM(Bert):
         )
         pooled = self.pooler(hidden_states)
         return self.cls(pooled)
-
-
-if __name__ == "__main__":
-    import torch
-    from transformers import BertForMaskedLM
-
-    hf_model = BertForMaskedLM.from_pretrained(ModelName.BERT_BASE_CASED.value).eval()
-    model = Bert.from_pretrained(ModelName.BERT_BASE_CASED).eval()
-
-    hidden_state = torch.randint(0, hf_model.config.vocab_size, (1, 10))
-    attention_mask = torch.rand(1, 10).ge(0.5)
-    hf_y = hf_model.forward(hidden_state, attention_mask)
-    y = model.forward(hidden_state, attention_mask)
-
-    torch.testing.assert_close(hf_y.logits, y, rtol=1e-4, atol=1e-4)
-    print(y.shape, hf_y[0].shape)

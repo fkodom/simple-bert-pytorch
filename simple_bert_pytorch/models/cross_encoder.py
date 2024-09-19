@@ -135,7 +135,9 @@ class CrossEncoder(nn.Module):
             os.makedirs(os.path.dirname(cache_path), exist_ok=True)
             torch.hub.download_url_to_file(config["weights_uri"], cache_path)
 
-        state_dict: dict[str, Tensor] = torch.load(cache_path, weights_only=True)
+        state_dict: dict[str, Tensor] = torch.load(
+            cache_path, weights_only=True, map_location="cpu"
+        )
         # NOTE: Because of how cross-encoder models were originally trained in the
         # 'sentence_transformers' library, all weights have a 'bert.' prefix which
         # we do not need.   Strip it off before loading weights into our model.
@@ -159,52 +161,3 @@ class CrossEncoder(nn.Module):
         hidden_states = self.encoder.forward(embeddings, attention_mask)
         pooled = self.pooler.forward(hidden_states)
         return self.classifier.forward(pooled).squeeze(-1)
-
-
-if __name__ == "__main__":
-    import torch
-    from transformers import AutoModelForSequenceClassification
-
-    model_name = ModelName.MS_MARCO_TINYBERT_L_2_V2
-    hf_model = AutoModelForSequenceClassification.from_pretrained(
-        model_name.value
-    ).eval()
-    model = CrossEncoder.from_pretrained(model_name).eval()
-
-    torch.manual_seed(42)
-    hidden_state = torch.randint(0, hf_model.config.vocab_size, (1, 10))
-    # attention_mask = torch.rand(1, 10).ge(0.5)
-    hf_y = hf_model.forward(hidden_state).logits
-    y = model.forward(hidden_state)
-
-    torch.testing.assert_close(hf_y[0], y, rtol=1e-4, atol=1e-4)
-
-    from simple_bert_pytorch.tokenizer import Tokenizer
-
-    tokenizer = Tokenizer.from_pretrained(model_name.value)
-
-    question = "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
-    text = (
-        "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. "
-        "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris. "
-        "Duis aute irure dolor in reprehenderit in voluptate velit esse."
-    )
-    texts = ["\n".join([text] * i) for i in range(1, 6)]
-
-    tokenized = tokenizer(
-        [(question + " [SEP] " + text) for text in texts],
-        padding=True,
-        max_length=512,
-        return_tensors=True,
-    )
-    input_ids = tokenized["input_ids"]
-    attn_mask = tokenized["attention_mask"].unsqueeze(1).unsqueeze(-1)
-
-    num_iterations = 10
-
-    import time
-
-    with torch.no_grad():
-        start = time.time()
-        _ = [model.forward(input_ids, attn_mask) for _ in range(num_iterations)]
-        print(f"Avg Time: {(time.time() - start) / num_iterations:.3f}s")
