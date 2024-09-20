@@ -205,6 +205,9 @@ class Bert(nn.Module):
 
     @classmethod
     def from_pretrained(cls, name: Union[ModelName, str]) -> Bert:
+        if not isinstance(name, ModelName):
+            name = ModelName(name)
+
         config = CONFIGS[name]
         bert = Bert.from_config(config)
 
@@ -250,21 +253,3 @@ class Bert(nn.Module):
             token_type_ids=token_type_ids,
         )
         return self.cls(hidden_states)
-
-
-class BertForMaskedLM(Bert):
-    def forward(
-        self,
-        input_ids: Tensor,
-        attention_mask: Optional[Tensor] = None,
-        position_ids: Optional[Tensor] = None,
-        token_type_ids: Optional[Tensor] = None,
-    ) -> Tensor:
-        hidden_states = self.bert.forward(
-            input_ids=input_ids,
-            attention_mask=attention_mask,
-            position_ids=position_ids,
-            token_type_ids=token_type_ids,
-        )
-        pooled = self.pooler(hidden_states)
-        return self.cls(pooled)

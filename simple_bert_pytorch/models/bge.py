@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import os
 from enum import Enum
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
 import torch
+from torch import Tensor
 
 from simple_bert_pytorch.modules import Backbone, Config, Pooler
 
@@ -100,10 +101,16 @@ class BGE(Backbone):
         self.pooler = Pooler(dim=dim)
 
     def forward(
-        self, input_ids: torch.Tensor, attention_mask: torch.Tensor = None
-    ) -> torch.Tensor:
-        x = self.embeddings(input_ids)
-        x = self.encoder(x, attention_mask=attention_mask)
+        self,
+        input_ids: Tensor,
+        attention_mask: Optional[Tensor] = None,
+        position_ids: Optional[Tensor] = None,
+        token_type_ids: Optional[Tensor] = None,
+    ) -> Tensor:
+        x = self.embeddings(
+            input_ids, position_ids=position_ids, token_type_ids=token_type_ids
+        )
+        x = self.encoder.forward(x, attention_mask=attention_mask)
         x = self.pooler(x)
         return x
 

@@ -23,44 +23,44 @@ class CrossEncoderConfig(Config):
     name: str
     weights_uri: str
 
-    @classmethod
-    def build_for_minilm(
-        cls, name: str, weights_uri: str, num_layers: int
-    ) -> CrossEncoderConfig:
-        return cls(
-            name=name,
-            weights_uri=weights_uri,
-            vocab_size=30522,
-            num_layers=num_layers,
-            dim=384,
-            num_heads=12,
-            intermediate_size=1536,
-            max_length=512,
-            pad_token_id=0,
-            dropout=0.1,
-            attention_dropout=0.1,
-            activation="gelu",
-            layer_norm_eps=1e-12,
-        )
+
+def build_config_for_minilm(
+    name: str, weights_uri: str, num_layers: int
+) -> CrossEncoderConfig:
+    return CrossEncoderConfig(
+        name=name,
+        weights_uri=weights_uri,
+        vocab_size=30522,
+        num_layers=num_layers,
+        dim=384,
+        num_heads=12,
+        intermediate_size=1536,
+        max_length=512,
+        pad_token_id=0,
+        dropout=0.1,
+        attention_dropout=0.1,
+        activation="gelu",
+        layer_norm_eps=1e-12,
+    )
 
 
 CONFIGS: Dict[ModelName, CrossEncoderConfig] = {
-    ModelName.MS_MARCO_MINILM_L_2_V2: CrossEncoderConfig.build_for_minilm(
+    ModelName.MS_MARCO_MINILM_L_2_V2: build_config_for_minilm(
         name=ModelName.MS_MARCO_MINILM_L_2_V2.value,
         weights_uri="https://huggingface.co/cross-encoder/ms-marco-MiniLM-L-2-v2/resolve/main/pytorch_model.bin",
         num_layers=2,
     ),
-    ModelName.MS_MARCO_MINILM_L_4_V2: CrossEncoderConfig.build_for_minilm(
+    ModelName.MS_MARCO_MINILM_L_4_V2: build_config_for_minilm(
         name=ModelName.MS_MARCO_MINILM_L_4_V2.value,
         weights_uri="https://huggingface.co/cross-encoder/ms-marco-MiniLM-L-4-v2/resolve/main/pytorch_model.bin",
         num_layers=4,
     ),
-    ModelName.MS_MARCO_MINILM_L_6_V2: CrossEncoderConfig.build_for_minilm(
+    ModelName.MS_MARCO_MINILM_L_6_V2: build_config_for_minilm(
         name=ModelName.MS_MARCO_MINILM_L_6_V2.value,
         weights_uri="https://huggingface.co/cross-encoder/ms-marco-MiniLM-L-6-v2/resolve/main/pytorch_model.bin",
         num_layers=6,
     ),
-    ModelName.MS_MARCO_MINILM_L_12_V2: CrossEncoderConfig.build_for_minilm(
+    ModelName.MS_MARCO_MINILM_L_12_V2: build_config_for_minilm(
         name=ModelName.MS_MARCO_MINILM_L_12_V2.value,
         weights_uri="https://huggingface.co/cross-encoder/ms-marco-MiniLM-L-12-v2/resolve/main/pytorch_model.bin",
         num_layers=12,
