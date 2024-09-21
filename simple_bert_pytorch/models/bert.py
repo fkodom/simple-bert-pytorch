@@ -1,22 +1,15 @@
 from __future__ import annotations
 
 import os
-from enum import Enum
 from typing import Dict, Optional, Type, TypeVar, Union
 
 import torch
 from torch import Tensor, nn
 
-from simple_bert_pytorch.modules import Backbone, Config, get_activation_fn
+from simple_bert_pytorch.common import Config, ModelName
+from simple_bert_pytorch.modules import Backbone, get_activation_fn
 
 BertType = TypeVar("BertType", bound="Bert")
-
-
-class ModelName(str, Enum):
-    BERT_BASE_UNCASED = "bert-base-uncased"
-    BERT_LARGE_UNCASED = "bert-large-uncased"
-    BERT_BASE_CASED = "bert-base-cased"
-    BERT_LARGE_CASED = "bert-large-cased"
 
 
 class BertConfig(Config):
@@ -230,7 +223,7 @@ class Bert(nn.Module):
         state_dict["cls.predictions.decoder.bias"] = state_dict.pop(
             "cls.predictions.bias"
         )
-        # These weights are not used by the end-to-end model.
+        # These weights are not used by the masked language model.
         state_dict.pop("bert.pooler.dense.weight")
         state_dict.pop("bert.pooler.dense.bias")
         state_dict.pop("cls.seq_relationship.weight")

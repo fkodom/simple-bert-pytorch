@@ -1,28 +1,14 @@
 from __future__ import annotations
 
-from typing import Optional, Type, TypedDict, TypeVar, Union
+from typing import Optional, Type, TypeVar, Union
 
 import torch
 from torch import Tensor, nn
 
-
-class Config(TypedDict):
-    vocab_size: int
-    num_layers: int
-    dim: int
-    num_heads: int
-    intermediate_size: int
-    max_length: int
-    pad_token_id: int
-    dropout: float
-    attention_dropout: float
-    activation: str
-    layer_norm_eps: float
+from simple_bert_pytorch.common import Config
 
 
 class Embeddings(nn.Module):
-    """Construct the embeddings from word, position and token_type embeddings."""
-
     def __init__(
         self,
         vocab_size: int,
@@ -290,8 +276,9 @@ class Encoder(nn.Module):
 
 class Pooler(nn.Module):
     # NOTE: IMO, this is a model-specific layer.  It's relevant for (e.g.) classifiers
-    # and embeddings models, some of those also use mean pooling instead.  This should
-    # be withheld from the base model, and implemented for downstream models as needed.
+    # and embeddings models, some of those also use mean pooling instead.  The HF
+    # implementation includes it in the BERT backbone, but I think it should be
+    # withheld from the base model, and added to downstream models as needed.
 
     def __init__(self, dim: int):
         super().__init__()

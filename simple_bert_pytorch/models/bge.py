@@ -1,19 +1,13 @@
 from __future__ import annotations
 
 import os
-from enum import Enum
 from typing import Dict, Optional, Union
 
 import torch
 from torch import Tensor
 
-from simple_bert_pytorch.modules import Backbone, Config, Pooler
-
-
-class ModelName(str, Enum):
-    BGE_SMALL_EN_V1_5 = "BAAI/bge-small-en-v1.5"
-    BGE_BASE_EN_V1_5 = "BAAI/bge-base-en-v1.5"
-    BGE_LARGE_EN_V1_5 = "BAAI/bge-large-en-v1.5"
+from simple_bert_pytorch.common import Config, ModelName
+from simple_bert_pytorch.modules import Backbone, Pooler
 
 
 class BGEConfig(Config):

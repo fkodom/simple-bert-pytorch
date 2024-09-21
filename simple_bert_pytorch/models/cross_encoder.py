@@ -1,22 +1,15 @@
 from __future__ import annotations
 
 import os
-from enum import Enum
 from typing import Dict, Optional, Type, TypeVar, Union
 
 import torch
 from torch import Tensor, nn
 
-from simple_bert_pytorch.modules import Config, Embeddings, Encoder, Pooler
+from simple_bert_pytorch.common import Config, ModelName
+from simple_bert_pytorch.modules import Embeddings, Encoder, Pooler
 
 CrossEncoderType = TypeVar("CrossEncoderType", bound="CrossEncoder")
-
-
-class ModelName(str, Enum):
-    MS_MARCO_MINILM_L_2_V2 = "cross-encoder/ms-marco-MiniLM-L-2-v2"
-    MS_MARCO_MINILM_L_4_V2 = "cross-encoder/ms-marco-MiniLM-L-4-v2"
-    MS_MARCO_MINILM_L_6_V2 = "cross-encoder/ms-marco-MiniLM-L-6-v2"
-    MS_MARCO_MINILM_L_12_V2 = "cross-encoder/ms-marco-MiniLM-L-12-v2"
 
 
 class CrossEncoderConfig(Config):

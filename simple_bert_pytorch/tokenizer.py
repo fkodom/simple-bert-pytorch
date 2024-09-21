@@ -1,3 +1,19 @@
+"""
+Defines the Tokenizer used by essentially all BERT-style models, which is made up
+of two main parts:
+
+- BasicTokenizer: Separates text into individual words and punctuation.  This
+    mostly just uses regex to split on whitespace and punctuation, but it also
+    removes invalid characters and normalizes unicode characters.
+- WordpieceTokenizer: Splits words into sub-word "tokens" based on a given
+    vocabulary.  The vocabulary was created by the original BERT authors, and
+    is reused by essentially all BERT models.
+
+Most users will only interact with the `Tokenizer` class, which combines those
+two parts into a single class.  It works similarly to `BertTokenizer` from the
+`transformers` library, but it is simpler and more efficient.
+"""
+
 from __future__ import annotations
 
 import copy
@@ -8,26 +24,31 @@ from collections import OrderedDict
 from functools import lru_cache
 from math import ceil
 from pathlib import Path
-from typing import List, Literal, Optional, Sequence, Set, TypedDict, overload
+from typing import List, Literal, Optional, Sequence, Set, TypedDict, Union, overload
 
 import torch
+
+from simple_bert_pytorch.common import ModelName
 
 # Precompute common characters that will be removed from text
 INVALID_CHARS = {chr(0), chr(0xFFFD)}
 # Path to local 'vocab.json' files that are used with essentially all BERT models
 CASED_VOCAB_PATH = Path(__file__).parent / "vocab-cased.json"
 UNCASED_VOCAB_PATH = Path(__file__).parent / "vocab-uncased.json"
-CASED_MODELS = {"bert-base-cased", "bert-large-cased"}
+CASED_MODELS = {
+    ModelName.BERT_BASE_CASED,
+    ModelName.BERT_LARGE_CASED,
+}
 UNCASED_MODELS = {
-    "BAAI/bge-small-en-v1.5",
-    "BAAI/bge-base-en-v1.5",
-    "BAAI/bge-large-en-v1.5",
-    "bert-base-uncased",
-    "bert-large-uncased",
-    "cross-encoder/ms-marco-MiniLM-L-2-v2",
-    "cross-encoder/ms-marco-MiniLM-L-4-v2",
-    "cross-encoder/ms-marco-MiniLM-L-6-v2",
-    "cross-encoder/ms-marco-MiniLM-L-12-v2",
+    ModelName.BERT_BASE_UNCASED,
+    ModelName.BERT_LARGE_UNCASED,
+    ModelName.BGE_SMALL_EN_V1_5,
+    ModelName.BGE_BASE_EN_V1_5,
+    ModelName.BGE_LARGE_EN_V1_5,
+    ModelName.MS_MARCO_MINILM_L_2_V2,
+    ModelName.MS_MARCO_MINILM_L_4_V2,
+    ModelName.MS_MARCO_MINILM_L_6_V2,
+    ModelName.MS_MARCO_MINILM_L_12_V2,
 }
 
 
@@ -187,7 +208,7 @@ class Tokenizer:
     @classmethod
     def from_pretrained(
         cls,
-        model_name: Optional[str] = None,
+        model_name: Optional[Union[ModelName, str]] = None,
         lower_case: Optional[bool] = None,
     ) -> Tokenizer:
         if (model_name is None) and (lower_case is None):
